@@ -10,7 +10,17 @@ import broadlink
 def get_device():
 
     # discover availabile devices on the local network
-    devices = broadlink.discover(timeout=5)
+    # get ssid from user
+    ssid = input("Enter WiFi SSID: ")
+    # get network password from user    
+    network_password = input("Enter WiFi Network Password: ")
+    # get ip address from user
+    ip_address = input("Enter IP Address for your subnet broadcast (e.g. 192.168.0.255): ")
+    broadlink.setup(ssid, network_password, 3, ip_address=ip_address)
+
+    # get local ip address from user
+    local_ip = input("Enter your local IP address (e.g. 192.168.0.100): ")
+    devices = broadlink.discover(timeout=5, local_ip_address=local_ip)
 
     # counter for device number selection
     n = 0
