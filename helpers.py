@@ -5,12 +5,29 @@ from time import sleep
 from base64 import b64decode, binascii
 from typing import Optional, List, Union
 from broadlink import Device
-
+import socket
 import broadlink
 
 # Default timeout in seconds for waiting for device responses
 DEFAULT_TIMEOUT = 10
 
+def get_local_ip() -> str:
+    """
+    Get the local IP address by creating a temporary socket connection.
+    
+    Returns:
+        str: Local IP address, defaults to '127.0.0.1' if unable to determine
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Doesn't need to be reachable, just used to determine local IP
+        s.connect(('10.255.255.255', 1))
+        local_ip = s.getsockname()[0]
+    except Exception:
+        local_ip = '127.0.0.1'
+    finally:
+        s.close()
+    return local_ip
 
 def get_device() -> Optional[Device]:
     """
@@ -30,25 +47,23 @@ def get_device() -> Optional[Device]:
 
     # discover availabile devices on the local network
     # get ssid from user
-    ssid = input("Enter WiFi SSID: ").strip()
-    if not ssid:
-        print("SSID cannot be empty")
-        return None
+    ssid = input("Enter WiFi SSID (or press Enter to skip WiFi setup): ").strip()
+    if ssid:
+        # get network password from user    
+        network_password = input("Enter WiFi Network Password: ").strip()
+        # get ip address from user
+        ip_address = input("Enter IP Address for your subnet broadcast (e.g. 192.168.0.255): ").strip()
         
-    # get network password from user    
-    network_password = input("Enter WiFi Network Password: ").strip()
-    # get ip address from user
-    ip_address = input("Enter IP Address for your subnet broadcast (e.g. 192.168.0.255): ").strip()
-    
-    # Validate IP address format
-    if not all(x.isdigit() and 0 <= int(x) <= 255 for x in ip_address.split('.')):
-        print("Invalid IP address format")
-        return None
-    
-    broadlink.setup(ssid, network_password, 3, ip_address=ip_address)
+        # Validate IP address format
+        if not all(x.isdigit() and 0 <= int(x) <= 255 for x in ip_address.split('.')):
+            print("Invalid IP address format")
+            return None
+        
+        broadlink.setup(ssid, network_password, 3, ip_address=ip_address)
 
-    # get local ip address from user
-    local_ip = input("Enter your local IP address (e.g. 192.168.0.100): ")
+
+        
+    local_ip = get_local_ip()
     devices = broadlink.discover(timeout=5, local_ip_address=local_ip)
 
     # counter for device number selection
